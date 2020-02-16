@@ -77,26 +77,26 @@ func main() {
 	app.Name = "redis-pipe"
 	app.Usage = "connect stdin with LPUSH and LPOP with stdout."
 	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:   "host",
-			Value:  "localhost",
-			Usage:  "Redis host",
-			EnvVar: "REDIS_HOST",
+		&cli.StringFlag{
+			Name:    "host",
+			Value:   "localhost",
+			Usage:   "Redis host",
+			EnvVars: []string{"REDIS_HOST"},
 		},
-		cli.IntFlag{
-			Name:   "port",
-			Value:  6379,
-			Usage:  "Redis port",
-			EnvVar: "REDIS_PORT",
+		&cli.IntFlag{
+			Name:    "port",
+			Value:   6379,
+			Usage:   "Redis port",
+			EnvVars: []string{"REDIS_PORT"},
 		},
-		cli.IntFlag{
+		&cli.IntFlag{
 			Name:  "count",
 			Value: -1,
 			Usage: "Redis Stop reading from list after count",
 		},
 	}
 
-	app.Action = func(c *cli.Context) {
+	app.Action = func(c *cli.Context) error {
 		list := c.Args().First()
 		if list == "" {
 			fmt.Println("Please provide name of the list")
@@ -107,6 +107,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Connecting to Redis failed: %s\n", err.Error())
 		}
+		defer conn.Close()
 
 		if termutil.Isatty(os.Stdin.Fd()) {
 			count := c.Int("count")
@@ -118,7 +119,7 @@ func main() {
 		} else {
 			write(list, conn)
 		}
-		conn.Close()
+		return nil
 	}
 
 	app.Run(os.Args)
